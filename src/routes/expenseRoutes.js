@@ -28,6 +28,27 @@ router.get('/', (req, res) => {
     res.status(200).json(rows);
   });
 });
+
+router.get("/pengeluaran-hari-ini", (req,res) => {
+  const today = new Date().toISOString().split("T")[0];
+  console.log("Tanggal yang digunakan untuk query:", today);
+  
+  const query = `
+  SELECT SUM(nominal) AS total_pengeluaran
+  FROM expanse
+  WHERE DATE(tanggal) = ?`;
+
+  db.get(query, [today], (err, row) => {
+    if (err) {
+      console.error("Error fetching pengeluaran:", err);
+      return res.status(500).json({ error: "Terjadi kesalahan pada server" });      
+    }
+    res.json({
+      totalPengeluaran: row.total_pengeluaran || 0,
+      tanggal: today,
+    });
+  });
+});
   
 
 module.exports = router;
