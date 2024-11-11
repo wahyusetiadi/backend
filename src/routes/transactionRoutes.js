@@ -85,4 +85,28 @@ router.get("/pendapatan-hari-ini", (req, res) => {
   });
 });
 
+// Endpoint untuk menghapus transaksi berdasarkan ID
+router.delete("/:id", (req, res) => {
+  const { id } = req.params; // Mendapatkan ID dari parameter URL
+
+  // Query untuk menghapus transaksi berdasarkan ID
+  const query = "DELETE FROM transaksi WHERE id = ?";
+
+  db.run(query, [id], function (err) {
+    if (err) {
+      return res
+        .status(500)
+        .json({ message: "Failed to delete transaction", error: err });
+    }
+
+    if (this.changes === 0) {
+      // Jika tidak ada transaksi yang dihapus (ID tidak ditemukan)
+      return res.status(404).json({ message: "Transaction not found" });
+    }
+
+    // Jika berhasil menghapus transaksi
+    res.status(200).json({ message: "Transaction successfully deleted" });
+  });
+});
+
 module.exports = router;

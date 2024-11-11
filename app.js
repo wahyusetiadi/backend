@@ -14,7 +14,7 @@ const port = 5000;
 // Gunakan middleware CORS untuk mengizinkan akses dari domain frontend tertentu
 app.use(cors({
   origin: 'http://localhost:3000', // Ganti dengan URL frontend Anda
-  methods: ['GET', 'POST'],
+  methods: ['GET', 'POST', 'PUT','DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true
 }));
