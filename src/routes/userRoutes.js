@@ -35,13 +35,39 @@ router.post('/login', (req, res) => {
     }
 
     // Generate token JWT
-    const token = jwt.sign({ id: user.id, role: user.role }, 'your_jwt_secret', { expiresIn: '24h' });
+    const token = jwt.sign({ id: user.id, role: user.role }, 'your_jwt_secret', { expiresIn: '60s' });
     
     // Respons sukses dengan status 200
     res.status(200).json({
       message: 'Login successful',
       token: token
     });
+  });
+});
+
+router.get('/', (req, res) => {
+  const query = `SELECT * FROM users`;
+
+  db.all(query, (err, rows) => {
+    if(err) {
+      return res.status(500).json({ message: "gagal GET users", error: err });
+    }
+    res.status(200).json(rows);
+  });
+});
+
+router.delete("/:id", (req, res) => {
+  const { id } = req.params;
+  const query = `DELETE FROM users WHERE id = ?`;
+
+  db.run(query, [id], function(err) {
+    if(err) {
+      return res.status(500).json({ message: "Gagal menghapus user id:", error: err });
+    }
+    if(this.changes === 0) {
+      return res.status(404).json({ message: "User not found "});
+    }
+    res.status(200).json({ message: "Berhasil menghapus user id:"});
   });
 });
 

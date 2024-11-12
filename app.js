@@ -7,6 +7,7 @@ const userRoutes = require('./src/routes/userRoutes');
 const branchRoutes = require('./src/routes/branchRoutes');
 const transactionRoutes = require('./src/routes/transactionRoutes');
 const expanseRoutes = require('./src/routes/expenseRoutes');
+const authenticate = require('./src/middlewares/authMiddleware');
 
 const app = express();
 const port = 5000;
@@ -20,7 +21,7 @@ app.use(cors({
 }));
 
 // Middleware untuk parsing JSON request body
-app.use(bodyParser.json());
+app.use(express.json());
 
 // Rute untuk API
 app.use('/api/users', userRoutes);

@@ -20,7 +20,8 @@ db.serialize(() => {
       email TEXT UNIQUE NOT NULL,
       password TEXT NOT NULL,
       role TEXT NOT NULL, 
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      create_date DATE,
+      create_time TIME
     )
   `);
 
