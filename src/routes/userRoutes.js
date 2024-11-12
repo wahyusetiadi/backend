@@ -13,9 +13,9 @@ router.post('/register', (req, res) => {
   const query = 'INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)';
   db.run(query, [name, email, hashedPassword, role], function(err) {
     if (err) {
-      return res.status(500).json({ message: 'Failed to register user', error: err });
+      return res.status(500).json({ message: 'Gagal mendaftarkan user', error: err });
     }
-    res.status(201).json({ message: 'User registered successfully', id: this.lastID });
+    res.status(201).json({ message: 'Registrasi user berhasil', id: this.lastID });
   });
 });
 
@@ -26,20 +26,20 @@ router.post('/login', (req, res) => {
   const query = 'SELECT * FROM users WHERE name = ?';
   db.get(query, [name], (err, user) => {
     if (err || !user) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({ message: 'User tidak ditemukan' });
     }
 
     // Verifikasi password
     if (!bcrypt.compareSync(password, user.password)) {
-      return res.status(400).json({ message: 'Invalid password' });
+      return res.status(400).json({ message: 'Password salah!' });
     }
 
     // Generate token JWT
-    const token = jwt.sign({ id: user.id, role: user.role }, 'your_jwt_secret', { expiresIn: '60s' });
+    const token = jwt.sign({ id: user.id, role: user.role }, 'jwt_token_secret', { expiresIn: '1h' });
     
     // Respons sukses dengan status 200
     res.status(200).json({
-      message: 'Login successful',
+      message: 'Login Berhasil',
       token: token
     });
   });
@@ -50,7 +50,7 @@ router.get('/', (req, res) => {
 
   db.all(query, (err, rows) => {
     if(err) {
-      return res.status(500).json({ message: "gagal GET users", error: err });
+      return res.status(500).json({ message: "Gagal GET users", error: err });
     }
     res.status(200).json(rows);
   });
@@ -62,12 +62,12 @@ router.delete("/:id", (req, res) => {
 
   db.run(query, [id], function(err) {
     if(err) {
-      return res.status(500).json({ message: "Gagal menghapus user id:", error: err });
+      return res.status(500).json({ message: `Gagal menghapus user`, error: err });
     }
     if(this.changes === 0) {
-      return res.status(404).json({ message: "User not found "});
+      return res.status(404).json({ message: "User tidak ditemukan "});
     }
-    res.status(200).json({ message: "Berhasil menghapus user id:"});
+    res.status(200).json({ message: `Berhasil menghapus user id: ${id}`});
   });
 });
 

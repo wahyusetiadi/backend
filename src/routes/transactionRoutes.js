@@ -19,11 +19,11 @@ router.post("/", (req, res) => {
     if (err) {
       return res
         .status(500)
-        .json({ message: "Failed to insert transaction", error: err });
+        .json({ message: "Gagal menambahkan transaksi", error: err });
     }
     res
       .status(201)
-      .json({ message: "Transaction successfully added", id: this.lastID });
+      .json({ message: "Transaksi berhasil ditambahkan", id: this.lastID });
   });
 });
 
@@ -35,7 +35,7 @@ router.get("/", (req, res) => {
     if (err) {
       return res
         .status(500)
-        .json({ message: "Failed to fetch transactions", error: err });
+        .json({ message: "Gagal GET transaksi", error: err });
     }
     res.status(200).json(rows);
   });
@@ -51,7 +51,7 @@ router.get("/transaksi-hari-ini", (req, res) => {
 
   db.get(query, [today], (err, row) => {
     if (err) {
-      console.error("Error fetching total transaksi harian:", err);
+      console.error("Gagal GET total transaksi harian:", err);
       return res.status(500).json({ error: "Terjadi kesalahan pada server" });
     }
     res.json({
@@ -73,7 +73,7 @@ router.get("/pendapatan-hari-ini", (req, res) => {
 
   db.get(query, [today], (err, row) => {
     if (err) {
-      console.error("Error fetching pendapatan:", err);
+      console.error("Gagal GET pendapatan:", err);
       return res.status(500).json({ error: "Terjadi kesalahan pada server" });
     }
 
@@ -96,16 +96,16 @@ router.delete("/:id", (req, res) => {
     if (err) {
       return res
         .status(500)
-        .json({ message: "Failed to delete transaction", error: err });
+        .json({ message: "Gagal menghapus transaksi", error: err });
     }
 
     if (this.changes === 0) {
       // Jika tidak ada transaksi yang dihapus (ID tidak ditemukan)
-      return res.status(404).json({ message: "Transaction not found" });
+      return res.status(404).json({ message: "Transaksi tidak ditemukan" });
     }
 
     // Jika berhasil menghapus transaksi
-    res.status(200).json({ message: "Transaction successfully deleted" });
+    res.status(200).json({ message: "Berhasil menghapus transaksi" });
   });
 });
 

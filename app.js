@@ -1,6 +1,6 @@
 // app.js
 const express = require('express');
-const bodyParser = require('body-parser');
+// const bodyParser = require('body-parser');
 const cors = require('cors'); // Import CORS
 const db = require('./src/db'); // Pastikan path ini benar
 const userRoutes = require('./src/routes/userRoutes');
@@ -26,7 +26,7 @@ app.use(express.json());
 // Rute untuk API
 app.use('/api/users', userRoutes);
 app.use('/api/branches', branchRoutes);
-app.use('/api/transaksi', transactionRoutes);  // Pastikan rute ini ada dan terhubung
+app.use('/api/transaksi', authenticate, transactionRoutes);
 app.use('/api/expanse', expanseRoutes);
 
 // Start server

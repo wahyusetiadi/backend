@@ -40,7 +40,7 @@ router.get("/pengeluaran-hari-ini", (req,res) => {
 
   db.get(query, [today], (err, row) => {
     if (err) {
-      console.error("Error fetching pengeluaran:", err);
+      console.error("Gagal GET pengeluaran:", err);
       return res.status(500).json({ error: "Terjadi kesalahan pada server" });      
     }
     res.json({
@@ -59,13 +59,13 @@ router.delete("/:id", (req,res) => {
     if (err) {
       return res
       .status(500)
-      .json({ message: "Failed to delete expanse", error: err });
+      .json({ message: "Gagal menghapus pengeluaran", error: err });
     }
 
     if (this.changes === 0) {
-      return res.status(404).json({ message: "Expanse not found "});
+      return res.status(404).json({ message: "Pengeluaran tidak ditemukan! "});
     }
-    res.status(200).json({ message: "Expanse successfully delete "});
+    res.status(200).json({ message: "Berhasil menghapus pengeluaran "});
   });
 });
   
