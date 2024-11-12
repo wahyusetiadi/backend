@@ -27,7 +27,7 @@ app.use(express.json());
 app.use('/api/users', userRoutes);
 app.use('/api/branches', branchRoutes);
 app.use('/api/transaksi', authenticate, transactionRoutes);
-app.use('/api/expanse', expanseRoutes);
+app.use('/api/expanse', authenticate, expanseRoutes);
 
 // Start server
 app.listen(port, () => {
