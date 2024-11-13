@@ -25,7 +25,7 @@ app.use(express.json());
 
 // Rute untuk API
 app.use('/api/users', userRoutes);
-app.use('/api/branches', branchRoutes);
+app.use('/api/admin/branches', branchRoutes);
 app.use('/api/transaksi', authenticate, transactionRoutes);
 app.use('/api/pengeluaran', authenticate, expanseRoutes);
 

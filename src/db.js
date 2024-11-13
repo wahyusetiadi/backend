@@ -19,9 +19,10 @@ db.serialize(() => {
       name TEXT NOT NULL,
       email TEXT UNIQUE NOT NULL,
       password TEXT NOT NULL,
-      role TEXT NOT NULL, 
-      create_date DATE,
-      create_time TIME
+      role TEXT NOT NULL,
+      cabang TEXT NOT NULL, 
+      dibuat_tanggal DATE DEFAULT (DATE('now')),
+      dibuat_jam TIME DEFAULT (TIME('now'))
     )
   `);
 
@@ -52,6 +53,7 @@ db.serialize(() => {
     jenisKendaraan TEXT NOT NULL,
     biaya INTEGER,
     petugas TEXT NOT NULL,
+    cabang TEXT NOT NULL,
     tanggal DATE DEFAULT (DATE('now')),
     waktu TIME DEFAULT (TIME('now'))
   )

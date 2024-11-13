@@ -1,9 +1,13 @@
 const express = require("express");
 const db = require("../db");
+const authenticate = require("../middlewares/authMiddleware");
 const router = express.Router();
 
 // Endpoint untuk menambahkan transaksi baru
 router.post("/", (req, res) => {
+  const adminCabang = req.user?.cabang;
+  console.log("cabang", adminCabang);
+  
   const { nomorPolisi, jenisKendaraan, biaya, petugas } = req.body;
 
   // Periksa apakah semua field ada
@@ -13,9 +17,9 @@ router.post("/", (req, res) => {
 
   // Query untuk menambahkan transaksi baru
   const query =
-    "INSERT INTO transaksi (nomorPolisi, jenisKendaraan, biaya, petugas) VALUES (?, ?, ?, ?)";
+    "INSERT INTO transaksi (nomorPolisi, jenisKendaraan, biaya, petugas, cabang) VALUES (?, ?, ?, ?, ?)";
 
-  db.run(query, [nomorPolisi, jenisKendaraan, biaya, petugas], function (err) {
+  db.run(query, [nomorPolisi, jenisKendaraan, biaya, petugas, adminCabang], function (err) {
     if (err) {
       return res
         .status(500)
@@ -28,10 +32,28 @@ router.post("/", (req, res) => {
 });
 
 // Endpoint untuk mengambil semua transaksi
-router.get("/", (req, res) => {
-  const query = "SELECT * FROM transaksi";
+router.get("/", authenticate, (req, res) => {
+  const adminCabang = req.user.cabang;
+  const userRole = req.user.role;
 
-  db.all(query, (err, rows) => {
+  let query = "SELECT * FROM transaksi";
+  let queryParams = [];
+
+  if(userRole === "admin_besar") {
+    query = "SELECT * FROM transaksi",
+    queryParams = [];
+  }
+  else if (userRole === "admin_cabang") {
+    query = "SELECT * FROM transaksi WHERE cabang = ?",
+    queryParams = [adminCabang];
+  }
+  else {
+    return res.status(403).json({ message: "Akses tidak diizinkan " });
+  }
+
+  // const query = "SELECT * FROM transaksi WHERE cabang = ?";
+
+  db.all(query, queryParams, (err, rows) => {
     if (err) {
       return res
         .status(500)
