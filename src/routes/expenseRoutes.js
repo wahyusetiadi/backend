@@ -3,14 +3,14 @@ const db = require('../db');
 const router = express.Router();
 
 router.post('/', (req, res) => {
-  const { keperluan, nominal, petugas } = req.body;
+  const { keperluan, biaya, petugas } = req.body;
 
-  if(!keperluan || ! nominal || !petugas) {
+  if(!keperluan || ! biaya || !petugas) {
     return res.status(400).json({ message: 'Semua field harus diisi' });
   }
 
-  const query = 'INSERT INTO expanse (keperluan, nominal, petugas) VALUES (?, ?, ?)';
-  db.run(query, [keperluan, nominal, petugas], function(err) {
+  const query = 'INSERT INTO pengeluaran (keperluan, biaya, petugas) VALUES (?, ?, ?)';
+  db.run(query, [keperluan, biaya, petugas], function(err) {
     if(err) {
       return res.status(500).json({ message: "Gagal Input Transaksi", error: err });
     }
@@ -19,7 +19,7 @@ router.post('/', (req, res) => {
 });
 
 router.get('/', (req, res) => {
-  const query = 'SELECT * FROM expanse';
+  const query = 'SELECT * FROM pengeluaran';
 
   db.all(query, (err, rows) => {
     if(err) {
@@ -34,8 +34,8 @@ router.get("/pengeluaran-hari-ini", (req,res) => {
   console.log("Tanggal yang digunakan untuk query:", today);
   
   const query = `
-  SELECT SUM(nominal) AS total_pengeluaran
-  FROM expanse
+  SELECT SUM(biaya) AS total_pengeluaran
+  FROM pengeluaran
   WHERE DATE(tanggal) = ?`;
 
   db.get(query, [today], (err, row) => {
@@ -53,7 +53,7 @@ router.get("/pengeluaran-hari-ini", (req,res) => {
 router.delete("/:id", (req,res) => {
   const { id } = req.params;
 
-  const query = "DELETE FROM expanse WHERE id = ?";
+  const query = "DELETE FROM pengeluaran WHERE id = ?";
 
   db.run(query, [id], function (err) {
     if (err) {

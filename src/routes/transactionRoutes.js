@@ -4,18 +4,18 @@ const router = express.Router();
 
 // Endpoint untuk menambahkan transaksi baru
 router.post("/", (req, res) => {
-  const { nomorPolisi, jenisKendaraan, harga, petugas } = req.body;
+  const { nomorPolisi, jenisKendaraan, biaya, petugas } = req.body;
 
   // Periksa apakah semua field ada
-  if (!nomorPolisi || !jenisKendaraan || !harga || !petugas) {
+  if (!nomorPolisi || !jenisKendaraan || !biaya || !petugas) {
     return res.status(400).json({ message: "Semua field harus diisi" });
   }
 
-  // Query untuk menambahkan transaksi baru (tanggalTransaksi akan otomatis terisi dengan CURRENT_TIMESTAMP)
+  // Query untuk menambahkan transaksi baru
   const query =
-    "INSERT INTO transaksi (nomorPolisi, jenisKendaraan, harga, petugas) VALUES (?, ?, ?, ?)";
+    "INSERT INTO transaksi (nomorPolisi, jenisKendaraan, biaya, petugas) VALUES (?, ?, ?, ?)";
 
-  db.run(query, [nomorPolisi, jenisKendaraan, harga, petugas], function (err) {
+  db.run(query, [nomorPolisi, jenisKendaraan, biaya, petugas], function (err) {
     if (err) {
       return res
         .status(500)
@@ -47,7 +47,7 @@ router.get("/transaksi-hari-ini", (req, res) => {
   const query = `
   SELECT COUNT(id) AS total_transaksi_harian
   FROM transaksi
-  WHERE DATE(tanggalTransaksi) = ?`;
+  WHERE DATE(tanggal) = ?`;
 
   db.get(query, [today], (err, row) => {
     if (err) {
@@ -67,9 +67,9 @@ router.get("/pendapatan-hari-ini", (req, res) => {
   console.log("Tanggal yang digunakan untuk query:", today); // Menambahkan log
 
   const query = `
-    SELECT SUM(harga) AS total_pendapatan
+    SELECT SUM(biaya) AS total_pendapatan
     FROM transaksi
-    WHERE DATE(tanggalTransaksi) = ?`; // Menggunakan kolom tanggalTransaksi
+    WHERE DATE(tanggal) = ?`;
 
   db.get(query, [today], (err, row) => {
     if (err) {
