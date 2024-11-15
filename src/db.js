@@ -41,8 +41,9 @@ db.serialize(() => {
       keperluan TEXT NOT NULL,
       biaya INTEGER,
       petugas TEXT NOT NULL,
+      cabang TEXT NOT NULL,
       tanggal DATE DEFAULT (DATE('now')),
-      waktu TIME DEFAULT (TIME('now'))
+      waktu TIME DEFAULT (TIME('now', '-5 hours'))
     )
   `);
 
@@ -55,7 +56,7 @@ db.serialize(() => {
     petugas TEXT NOT NULL,
     cabang TEXT NOT NULL,
     tanggal DATE DEFAULT (DATE('now')),
-    waktu TIME DEFAULT (TIME('now'))
+    waktu TIME DEFAULT (TIME('now', '-5 hours'))
   )
 `);
 

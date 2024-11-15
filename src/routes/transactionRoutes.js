@@ -64,14 +64,36 @@ router.get("/", authenticate, (req, res) => {
 });
 
 router.get("/transaksi-hari-ini", (req, res) => {
+  const adminCabang = req.user.cabang;
+  console.log("admin cabang: ", adminCabang);
+  
+  const userRole = req.user.role;
   const today = new Date().toISOString().split("T")[0];
 
-  const query = `
-  SELECT COUNT(id) AS total_transaksi_harian
-  FROM transaksi
-  WHERE DATE(tanggal) = ?`;
+  let query = `SELECT COUNT(id) AS total_transaksi_harian
+  FROM transaksi WHERE DATE(tanggal) = ?`;
+  let queryParams= [today];
 
-  db.get(query, [today], (err, row) => {
+  if(userRole === "admin_besar") {
+    query = `SELECT COUNT(id) AS total_transaksi_harian
+    FROM transaksi WHERE DATE(tanggal) = ?`;
+    queryParams = [today];
+  }
+  else if(userRole === "admin_cabang") {
+    query = `SELECT COUNT(id) AS total_transaksi_harian
+    FROM transaksi WHERE DATE(tanggal) = ? AND cabang = ?`;
+    queryParams = [today, adminCabang];
+  }
+  else {
+    return res.status(403).json({ message: "Akses tidak diizinkan"});
+  }
+
+  // const query = `
+  // SELECT COUNT(id) AS total_transaksi_harian
+  // FROM transaksi
+  // WHERE DATE(tanggal) = ?`;
+
+  db.get(query, queryParams, (err, row) => {
     if (err) {
       console.error("Gagal GET total transaksi harian:", err);
       return res.status(500).json({ error: "Terjadi kesalahan pada server" });

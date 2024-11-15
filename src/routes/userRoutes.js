@@ -3,6 +3,7 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const db = require('../db');
+const authenticate = require('../middlewares/authMiddleware');
 const router = express.Router();
 
 // Register User (Admin cabang dan admin besar)
@@ -51,7 +52,7 @@ router.post('/login', (req, res) => {
     // Respons sukses dengan status 200
     res.status(200).json({
       message: 'Login Berhasil',
-      token: token
+      token: token,
     });
   });
 });
@@ -81,5 +82,10 @@ router.delete("/:id", (req, res) => {
     res.status(200).json({ message: `Berhasil menghapus user id: ${id}`});
   });
 });
+
+//endpoint untuk GET user
+router.get('/data', authenticate, (req, res) => {
+  res.json(req.user);
+})
 
 module.exports = router;

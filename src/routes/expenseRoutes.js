@@ -3,14 +3,17 @@ const db = require('../db');
 const router = express.Router();
 
 router.post('/', (req, res) => {
+  const adminCabang = req.user?.cabang;
+  console.log("cabang", adminCabang);
+  
   const { keperluan, biaya, petugas } = req.body;
 
   if(!keperluan || ! biaya || !petugas) {
     return res.status(400).json({ message: 'Semua field harus diisi' });
   }
 
-  const query = 'INSERT INTO pengeluaran (keperluan, biaya, petugas) VALUES (?, ?, ?)';
-  db.run(query, [keperluan, biaya, petugas], function(err) {
+  const query = 'INSERT INTO pengeluaran (keperluan, biaya, petugas, cabang) VALUES (?, ?, ?, ?)';
+  db.run(query, [keperluan, biaya, petugas, adminCabang], function(err) {
     if(err) {
       return res.status(500).json({ message: "Gagal Input Transaksi", error: err });
     }

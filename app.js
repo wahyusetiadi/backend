@@ -7,6 +7,7 @@ const userRoutes = require('./src/routes/userRoutes');
 const branchRoutes = require('./src/routes/branchRoutes');
 const transactionRoutes = require('./src/routes/transactionRoutes');
 const expanseRoutes = require('./src/routes/expenseRoutes');
+const reportRoutes = require('./src/routes/reportRoutes');
 const authenticate = require('./src/middlewares/authMiddleware');
 
 const app = express();
@@ -28,6 +29,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/admin/branches', branchRoutes);
 app.use('/api/transaksi', authenticate, transactionRoutes);
 app.use('/api/pengeluaran', authenticate, expanseRoutes);
+app.use('/api/report', reportRoutes);
 
 // Start server
 app.listen(port, () => {
