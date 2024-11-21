@@ -43,7 +43,7 @@ router.post('/login', (req, res) => {
 
     // Verifikasi password
     if (!bcrypt.compareSync(password, user.password)) {
-      return res.status(400).json({ message: 'Password salah!' });
+      return res.status(400).json({ message: 'Username atau password salah!' });
     }
 
     // Generate token JWT

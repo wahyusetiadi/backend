@@ -43,7 +43,7 @@ db.serialize(() => {
       petugas TEXT NOT NULL,
       cabang TEXT NOT NULL,
       tanggal DATE DEFAULT (DATE('now')),
-      waktu TIME DEFAULT (TIME('now', '-5 hours'))
+      waktu TIME DEFAULT (TIME('now', '+7 hours'))
     )
   `);
 
@@ -56,7 +56,7 @@ db.serialize(() => {
     petugas TEXT NOT NULL,
     cabang TEXT NOT NULL,
     tanggal DATE DEFAULT (DATE('now')),
-    waktu TIME DEFAULT (TIME('now', '-5 hours'))
+    waktu TIME DEFAULT (TIME('now', '+7 hours'))
   )
 `);
 

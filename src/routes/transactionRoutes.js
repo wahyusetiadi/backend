@@ -7,7 +7,7 @@ const router = express.Router();
 router.post("/", (req, res) => {
   const adminCabang = req.user?.cabang;
   console.log("cabang", adminCabang);
-  
+
   const { nomorPolisi, jenisKendaraan, biaya, petugas } = req.body;
 
   // Periksa apakah semua field ada
@@ -19,16 +19,20 @@ router.post("/", (req, res) => {
   const query =
     "INSERT INTO transaksi (nomorPolisi, jenisKendaraan, biaya, petugas, cabang) VALUES (?, ?, ?, ?, ?)";
 
-  db.run(query, [nomorPolisi, jenisKendaraan, biaya, petugas, adminCabang], function (err) {
-    if (err) {
-      return res
-        .status(500)
-        .json({ message: "Gagal menambahkan transaksi", error: err });
+  db.run(
+    query,
+    [nomorPolisi, jenisKendaraan, biaya, petugas, adminCabang],
+    function (err) {
+      if (err) {
+        return res
+          .status(500)
+          .json({ message: "Gagal menambahkan transaksi", error: err });
+      }
+      res
+        .status(201)
+        .json({ message: "Transaksi berhasil ditambahkan", id: this.lastID });
     }
-    res
-      .status(201)
-      .json({ message: "Transaksi berhasil ditambahkan", id: this.lastID });
-  });
+  );
 });
 
 // Endpoint untuk mengambil semua transaksi
@@ -39,15 +43,12 @@ router.get("/", authenticate, (req, res) => {
   let query = "SELECT * FROM transaksi";
   let queryParams = [];
 
-  if(userRole === "admin_besar") {
-    query = "SELECT * FROM transaksi",
-    queryParams = [];
-  }
-  else if (userRole === "admin_cabang") {
-    query = "SELECT * FROM transaksi WHERE cabang = ?",
-    queryParams = [adminCabang];
-  }
-  else {
+  if (userRole === "admin_besar") {
+    (query = "SELECT * FROM transaksi"), (queryParams = []);
+  } else if (userRole === "admin_cabang") {
+    (query = "SELECT * FROM transaksi WHERE cabang = ?"),
+      (queryParams = [adminCabang]);
+  } else {
     return res.status(403).json({ message: "Akses tidak diizinkan " });
   }
 
@@ -65,27 +66,25 @@ router.get("/", authenticate, (req, res) => {
 
 router.get("/transaksi-hari-ini", (req, res) => {
   const adminCabang = req.user.cabang;
-  console.log("admin cabang: ", adminCabang);
-  
+  console.log("transaksi admin cabang: ", adminCabang);
+
   const userRole = req.user.role;
   const today = new Date().toISOString().split("T")[0];
 
   let query = `SELECT COUNT(id) AS total_transaksi_harian
   FROM transaksi WHERE DATE(tanggal) = ?`;
-  let queryParams= [today];
+  let queryParams = [today];
 
-  if(userRole === "admin_besar") {
+  if (userRole === "admin_besar") {
     query = `SELECT COUNT(id) AS total_transaksi_harian
     FROM transaksi WHERE DATE(tanggal) = ?`;
     queryParams = [today];
-  }
-  else if(userRole === "admin_cabang") {
+  } else if (userRole === "admin_cabang") {
     query = `SELECT COUNT(id) AS total_transaksi_harian
     FROM transaksi WHERE DATE(tanggal) = ? AND cabang = ?`;
     queryParams = [today, adminCabang];
-  }
-  else {
-    return res.status(403).json({ message: "Akses tidak diizinkan"});
+  } else {
+    return res.status(403).json({ message: "Akses tidak diizinkan" });
   }
 
   // const query = `
@@ -107,15 +106,38 @@ router.get("/transaksi-hari-ini", (req, res) => {
 
 // Endpoint untuk mendapatkan total pendapatan hari ini
 router.get("/pendapatan-hari-ini", (req, res) => {
-  const today = new Date().toISOString().split("T")[0]; // Format YYYY-MM-DD
-  console.log("Tanggal yang digunakan untuk query:", today); // Menambahkan log
+  const adminCabang = req.user.cabang;
+  console.log("pendapatan admin cabang", adminCabang);
 
-  const query = `
-    SELECT SUM(biaya) AS total_pendapatan
+  userRole = req.user.role;
+  const today = new Date().toISOString().split("T")[0]; // Format YYYY-MM-DD
+  console.log("Tanggal pendapatan:", today); // Menambahkan log
+
+  let query = `SELECT SUM(biaya) AS total_pendapatan
     FROM transaksi
     WHERE DATE(tanggal) = ?`;
+  let queryParams = [today];
 
-  db.get(query, [today], (err, row) => {
+  if(userRole === "admin_besar") {
+    query = `SELECT SUM(biaya) AS total_pendapatan
+    FROM transaksi
+    WHERE DATE(tanggal) = ?`;
+    queryParams = [today];
+  } else if(userRole === "admin_cabang") {
+    query = `SELECT SUM(biaya) AS total_pendapatan
+    FROM transaksi
+    WHERE DATE(tanggal) = ? AND cabang = ?`;
+    queryParams = [today, adminCabang];
+  } else {
+    return res.status(403).json({ message: "Akses di tolak!" });
+  }
+
+  // const query = `;
+  //   SELECT SUM(biaya) AS total_pendapatan
+  //   FROM transaksi
+  //   WHERE DATE(tanggal) = ?`;
+
+  db.get(query, queryParams, (err, row) => {
     if (err) {
       console.error("Gagal GET pendapatan:", err);
       return res.status(500).json({ error: "Terjadi kesalahan pada server" });
