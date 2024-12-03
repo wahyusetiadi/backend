@@ -47,7 +47,7 @@ router.post('/login', (req, res) => {
     }
 
     // Generate token JWT
-    const token = jwt.sign({ id: user.id, role: user.role, cabang: user.cabang }, 'jwt_token_secret', { expiresIn: '12h' });
+    const token = jwt.sign({ id: user.id, name: user.name, role: user.role, cabang: user.cabang }, 'jwt_token_secret', { expiresIn: '12h' });
     
     // Respons sukses dengan status 200
     res.status(200).json({
