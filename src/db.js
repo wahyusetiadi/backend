@@ -60,6 +60,13 @@ db.serialize(() => {
   )
 `);
 
+  db.run(`
+  CREATE TABLE IF NOT EXISTS biaya (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  biaya INTEGER
+  )
+  `);
+
   // db.run(`
   //   CREATE TABLE IF NOT EXISTS transactions (
   //     id INTEGER PRIMARY KEY AUTOINCREMENT,
