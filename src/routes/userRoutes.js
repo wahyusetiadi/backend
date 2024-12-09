@@ -83,9 +83,51 @@ router.delete("/:id", (req, res) => {
   });
 });
 
+router.put('/:id', (req, res) => {
+  const { id } = req.params;
+  const { name, email, password, role, cabang } = req.body;
+
+  if (!name || !email || !role || !cabang) {
+    return res.status(400).json({ message: 'Semua field wajib diisi (name, email, role, cabang).' });
+  }
+
+  let updatedPassword = null;
+  if (password) {
+    updatedPassword = bcrypt.hashSync(password, 8);
+  }
+
+  const checkQuery = 'SELECT * FROM users WHERE email = ? AND id != ?';
+  db.get(checkQuery, [email, id], (err, row) => {
+    if (err) {
+      return res.status(500).json({ message: "Terjadi kesalahan pada server." });
+    }
+    if (row) {
+      return res.status(400).json({ message: 'Email sudah digunakan oleh user lain.' });
+    }
+
+    const updateQuery = `
+      UPDATE users
+      SET name = ?, email = ?, password = ?, role = ?, cabang = ?
+      WHERE id = ?
+    `;
+
+    db.run(updateQuery, [name, email, updatedPassword || null, role, cabang, id], function (err) {
+      if (err) {
+        return res.status(500).json({ message: "Gagal memperbarui user", error: err });
+      }
+
+      if (this.changes === 0) {
+        return res.status(404).json({ message: "User tidak ditemukan" });
+      }
+
+      res.status(200).json({ message: `User dengan ID ${id} berhasil diperbarui.` });
+    });
+  });
+});
+
 //endpoint untuk GET user
 router.get('/data', authenticate, (req, res) => {
   res.json(req.user);
-})
+});
 
 module.exports = router;
