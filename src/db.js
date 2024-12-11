@@ -22,7 +22,7 @@ db.serialize(() => {
       role TEXT NOT NULL,
       cabang TEXT NOT NULL, 
       dibuat_tanggal DATE DEFAULT (DATE('now')),
-      dibuat_jam TIME DEFAULT (TIME('now'))
+      dibuat_jam TIME DEFAULT (TIME('now' , '+7 hours'))
     )
   `);
 

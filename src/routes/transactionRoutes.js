@@ -5,29 +5,31 @@ const router = express.Router();
 
 // Endpoint untuk menambahkan transaksi baru
 router.post("/", (req, res) => {
-  const adminCabang = req.user?.cabang;
-  console.log("cabang", adminCabang);
+  // const adminCabang = req.user?.cabang;
+  // console.log("cabang", adminCabang);
 
-  const { nomorPolisi, jenisKendaraan, biaya, petugas } = req.body;
+  const { nomorPolisi, jenisKendaraan, biaya, petugas, cabang } = req.body;
 
   // Periksa apakah semua field ada
-  if (!nomorPolisi || !jenisKendaraan || !biaya || !petugas) {
+  if (!nomorPolisi || !jenisKendaraan || !biaya || !petugas ||!cabang) {
     return res.status(400).json({ message: "Semua field harus diisi" });
   }
 
+  const waktuTransaksi = new Date().toISOString();
   // Query untuk menambahkan transaksi baru
   const query =
     "INSERT INTO transaksi (nomorPolisi, jenisKendaraan, biaya, petugas, cabang) VALUES (?, ?, ?, ?, ?)";
 
   db.run(
     query,
-    [nomorPolisi, jenisKendaraan, biaya, petugas, adminCabang],
+    [nomorPolisi, jenisKendaraan, biaya, petugas, cabang],
     function (err) {
       if (err) {
         return res
           .status(500)
           .json({ message: "Gagal menambahkan transaksi", error: err });
       }
+      console.log(`[LOG] Transaksi ditambahkan - Petugas: ${petugas}, Cabang: ${cabang}, Waktu: ${waktuTransaksi}`);
       res
         .status(201)
         .json({ message: "Transaksi berhasil ditambahkan", id: this.lastID });

@@ -3,20 +3,24 @@ const db = require('../db');
 const router = express.Router();
 
 router.post('/', (req, res) => {
-  const adminCabang = req.user?.cabang;
-  console.log("cabang", adminCabang);
+  // const adminCabang = req.user?.cabang;
+  // console.log("cabang", adminCabang);
   
-  const { keperluan, biaya, petugas } = req.body;
+  const { keperluan, biaya, petugas, cabang } = req.body;
 
-  if(!keperluan || ! biaya || !petugas) {
+  if(!keperluan || ! biaya || !petugas ||!cabang) {
     return res.status(400).json({ message: 'Semua field harus diisi' });
   }
+  const waktuTransaksi = new Date().toISOString();
+
 
   const query = 'INSERT INTO pengeluaran (keperluan, biaya, petugas, cabang) VALUES (?, ?, ?, ?)';
-  db.run(query, [keperluan, biaya, petugas, adminCabang], function(err) {
+  db.run(query, [keperluan, biaya, petugas, cabang], function(err) {
     if(err) {
       return res.status(500).json({ message: "Gagal Input Transaksi", error: err });
     }
+    console.log(`[LOG] Pengeluaran ditambahkan - Petugas: ${petugas}, Cabang: ${cabang}, Waktu: ${waktuTransaksi}`);
+
     res.status(201).json({ message: "Input pengeluaran berhasil", id: this.lastID });
   });
 });

@@ -12,12 +12,12 @@ const biayaRoutes = require("./src/routes/biayaRoutes")
 const authenticate = require("./src/middlewares/authMiddleware");
 
 const app = express();
-const port = 5000;
+const port = 4301;
 
 // Gunakan middleware CORS untuk mengizinkan akses dari domain frontend tertentu
 app.use(
   cors({
-    origin: "http://localhost:3000", // Ganti dengan URL frontend Anda
+    origin: "https://wash.huntersmithnusantara.id/api/v1", // Ganti dengan URL frontend Anda
     methods: ["GET", "POST", "PUT", "DELETE"],
     allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true,
@@ -28,12 +28,12 @@ app.use(
 app.use(express.json());
 
 // Rute untuk API
-app.use("/api/users", userRoutes);
-app.use("/api/admin/branches", branchRoutes);
-app.use("/api/transaksi", authenticate, transactionRoutes);
-app.use("/api/pengeluaran", authenticate, expanseRoutes);
-app.use("/api/biaya", biayaRoutes);
-app.use("/api/report", reportRoutes);
+app.use("/users", userRoutes);
+app.use("/admin/branches", branchRoutes);
+app.use("/transaksi", authenticate, transactionRoutes);
+app.use("/pengeluaran", authenticate, expanseRoutes);
+app.use("/biaya", biayaRoutes);
+app.use("/report", reportRoutes);
 
 // Start server
 app.listen(port, () => {
