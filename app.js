@@ -11,13 +11,15 @@ const reportRoutes = require("./src/routes/reportRoutes");
 const biayaRoutes = require("./src/routes/biayaRoutes")
 const authenticate = require("./src/middlewares/authMiddleware");
 
+require('dotenv').config();
+
 const app = express();
 const port = 4301;
 
 // Gunakan middleware CORS untuk mengizinkan akses dari domain frontend tertentu
 app.use(
   cors({
-    origin: "https://wash.huntersmithnusantara.id/api/v1", // Ganti dengan URL frontend Anda
+    origin: process.env.CORS_ORIGIN, // Ganti dengan URL frontend Anda
     methods: ["GET", "POST", "PUT", "DELETE"],
     allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true,
