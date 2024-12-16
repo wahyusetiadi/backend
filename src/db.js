@@ -21,7 +21,7 @@ db.serialize(() => {
       password TEXT NOT NULL,
       role TEXT NOT NULL,
       cabang TEXT NOT NULL, 
-      dibuat_tanggal DATE DEFAULT (DATE('now')),
+      dibuat_tanggal DATE DEFAULT (DATE('now', '+7 hours')),
       dibuat_jam TIME DEFAULT (TIME('now' , '+7 hours'))
     )
   `);
@@ -42,7 +42,7 @@ db.serialize(() => {
       biaya INTEGER,
       petugas TEXT NOT NULL,
       cabang TEXT NOT NULL,
-      tanggal DATE DEFAULT (DATE('now')),
+      tanggal DATE DEFAULT (DATE('now', '+7 hours')),
       waktu TIME DEFAULT (TIME('now', '+7 hours'))
     )
   `);
@@ -56,7 +56,7 @@ db.serialize(() => {
     gambar TEXT,
     petugas TEXT NOT NULL,
     cabang TEXT NOT NULL,
-    tanggal DATE DEFAULT (DATE('now')),
+    tanggal DATE DEFAULT (DATE('now', '+7 hours')),
     waktu TIME DEFAULT (TIME('now', '+7 hours'))
   )
 `);
