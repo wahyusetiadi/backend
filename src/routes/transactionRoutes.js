@@ -1,10 +1,23 @@
 const express = require("express");
 const db = require("../db");
+const multer = require("multer");
 const authenticate = require("../middlewares/authMiddleware");
+const path = require("path");
 const router = express.Router();
 
+const storage = multer.diskStorage({
+  destination: function(req, file,cb) {
+    cb(null, path.join(__dirname, "../../uploads/"));
+  },
+  filename: function(req, file, cb) {
+    cb(null, Date.now() + path.extname(file.originalname));
+  }
+});
+
+const upload = multer({ storage: storage });
+
 // Endpoint untuk menambahkan transaksi baru
-router.post("/", (req, res) => {
+router.post("/", upload.single("gambar"), (req, res) => {
   // const adminCabang = req.user?.cabang;
   // console.log("cabang", adminCabang);
 
@@ -15,14 +28,16 @@ router.post("/", (req, res) => {
     return res.status(400).json({ message: "Semua field harus diisi" });
   }
 
+  const gambar = req.file ? `/uploads/${req.file.filename}` : null;
+
   const waktuTransaksi = new Date().toISOString();
   // Query untuk menambahkan transaksi baru
   const query =
-    "INSERT INTO transaksi (nomorPolisi, jenisKendaraan, biaya, petugas, cabang) VALUES (?, ?, ?, ?, ?)";
+    "INSERT INTO transaksi (nomorPolisi, jenisKendaraan, biaya, gambar, petugas, cabang) VALUES (?, ?, ?, ?, ?, ?)";
 
   db.run(
     query,
-    [nomorPolisi, jenisKendaraan, biaya, petugas, cabang],
+    [nomorPolisi, jenisKendaraan, biaya, gambar, petugas, cabang],
     function (err) {
       if (err) {
         return res
@@ -35,6 +50,18 @@ router.post("/", (req, res) => {
         .json({ message: "Transaksi berhasil ditambahkan", id: this.lastID });
     }
   );
+});
+
+router.get("/gambar/:filename", (req,res) => {
+  const { filename } = req.params;
+  const filePah = path.join(__dirname, "../../uploads", filename);
+
+  res.send(filePah, (err) => {
+    if(err) {
+      console.error("File not found", err);
+      res.status(404).json({ message: "File gambar tidak ditemukan" });
+    }
+  });
 });
 
 // Endpoint untuk mengambil semua transaksi

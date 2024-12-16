@@ -53,6 +53,7 @@ db.serialize(() => {
     nomorPolisi TEXT NOT NULL,
     jenisKendaraan TEXT NOT NULL,
     biaya INTEGER,
+    gambar TEXT,
     petugas TEXT NOT NULL,
     cabang TEXT NOT NULL,
     tanggal DATE DEFAULT (DATE('now')),

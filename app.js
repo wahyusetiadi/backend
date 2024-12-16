@@ -10,12 +10,14 @@ const expanseRoutes = require("./src/routes/expenseRoutes");
 const reportRoutes = require("./src/routes/reportRoutes");
 const biayaRoutes = require("./src/routes/biayaRoutes")
 const authenticate = require("./src/middlewares/authMiddleware");
+const path = require("path");
 
 require('dotenv').config();
 
 const app = express();
 const port = 4301;
 
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 // Gunakan middleware CORS untuk mengizinkan akses dari domain frontend tertentu
 app.use(
   cors({
