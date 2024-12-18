@@ -204,4 +204,44 @@ router.delete("/:id", (req, res) => {
   });
 });
 
+router.put("/:id", authenticate, (req, res) => {
+  const adminCabang = req.user.cabang;
+  const userRole = req.user.role;
+  const transactionId = req.params.id; // ID transaksi yang akan diupdate
+  const { nomorPolisi, jenisKendaraan, biaya, cabang } = req.body; // Data yang ingin diupdate
+
+  // Memastikan data yang diperlukan ada
+  if (!nomorPolisi || !jenisKendaraan || !biaya || !cabang) {
+    return res.status(400).json({ message: "Data yang diperlukan tidak lengkap" });
+  }
+
+  // Validasi hak akses berdasarkan peran
+  let query = "UPDATE transaksi SET nomorPolisi = ?, jenisKendaraan = ?, biaya = ?, cabang = ? WHERE id = ?";
+  let queryParams = [nomorPolisi, jenisKendaraan, biaya, cabang, transactionId];
+
+  if (userRole === "admin_besar") {
+    // Admin besar dapat mengubah transaksi apa pun
+  } else if (userRole === "admin_cabang") {
+    // Admin cabang hanya dapat mengubah transaksi milik cabang mereka
+    query += " AND cabang = ?";
+    queryParams.push(adminCabang);
+  } else {
+    return res.status(403).json({ message: "Akses tidak diizinkan" });
+  }
+
+  // Menjalankan query untuk memperbarui transaksi
+  db.run(query, queryParams, function (err) {
+    if (err) {
+      return res.status(500).json({ message: "Gagal memperbarui transaksi", error: err });
+    }
+    if (this.changes === 0) {
+      return res.status(404).json({ message: "Transaksi tidak ditemukan atau tidak ada perubahan" });
+    }
+    res.status(200).json({ message: "Transaksi berhasil diperbarui" });
+  });
+});
+
+
+
+
 module.exports = router;
