@@ -2,7 +2,7 @@
 const express = require("express");
 // const bodyParser = require('body-parser');
 const cors = require("cors"); // Import CORS
-const db = require("./src/db"); // Pastikan path ini benar
+// const db = require("./src/db"); // Pastikan path ini benar
 const userRoutes = require("./src/routes/userRoutes");
 const branchRoutes = require("./src/routes/branchRoutes");
 const transactionRoutes = require("./src/routes/transactionRoutes");
@@ -11,6 +11,7 @@ const reportRoutes = require("./src/routes/reportRoutes");
 const biayaRoutes = require("./src/routes/biayaRoutes")
 const authenticate = require("./src/middlewares/authMiddleware");
 const path = require("path");
+const dbPath = path.join(__dirname, '..', 'data', 'db.sqlite');
 
 require('dotenv').config();
 

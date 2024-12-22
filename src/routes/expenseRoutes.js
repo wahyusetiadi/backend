@@ -38,6 +38,7 @@ router.get('/', (req, res) => {
 
 router.get("/pengeluaran-hari-ini", (req,res) => {
   const adminCabang = req.user.cabang;
+  const userName = req.user.name;
   console.log("pengeluaran admin cabang:", adminCabang);
 
   const userRole = req.user.role;
@@ -58,8 +59,8 @@ router.get("/pengeluaran-hari-ini", (req,res) => {
   else if(userRole === "admin_cabang") {
     query = `SELECT SUM(biaya) AS total_pengeluaran
     FROM pengeluaran
-    WHERE DATE(tanggal) = ? AND cabang = ?`;
-    queryParams = [today, adminCabang];
+    WHERE DATE(tanggal) = ? AND petugas = ?`;
+    queryParams = [today, userName];
   }
   else {
     return res.status(403).json({ message: "Akses tidak diizinkan" });
