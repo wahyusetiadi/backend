@@ -39,7 +39,7 @@ router.get('/', (req, res) => {
 router.get("/pengeluaran-hari-ini", (req,res) => {
   const adminCabang = req.user.cabang;
   const userName = req.user.name;
-  console.log("pengeluaran admin cabang:", adminCabang);
+  // console.log("pengeluaran admin cabang:", adminCabang);
 
   const userRole = req.user.role;
   const today = new Date();

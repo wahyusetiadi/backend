@@ -101,9 +101,13 @@ router.post("/", upload.single("gambar"), (req, res) => {
             .status(500)
             .json({ message: "Gagal menambahkan transaksi", error: err });
         }
-        console.log(
-          `[LOG] Transaksi ditambahkan - Petugas: ${petugas}, Cabang: ${cabang}, Waktu: ${waktuTransaksi}`
-        );
+        console.log(`[LOG] Transaksi ditambahkan:
+          Nomor Polisi: ${nomorPolisi},
+          Jenis Kendaraan: ${jenisKendaraan},
+          Biaya: ${biaya},
+          Petugas: ${petugas},
+          Cabang: ${cabang},
+          Waktu: ${waktuTransaksi}`);
         res
           .status(201)
           .json({ message: "Transaksi berhasil ditambahkan", id: this.lastID });
@@ -187,7 +191,7 @@ router.get("/", authenticate, (req, res) => {
 router.get("/transaksi-hari-ini", (req, res) => {
   const adminCabang = req.user.cabang;
   const userName = req.user.name;
-  console.log("transaksi admin cabang: ", adminCabang);
+  // console.log("transaksi admin cabang: ", adminCabang);
 
   const userRole = req.user.role;
   const today = new Date();
@@ -284,8 +288,8 @@ router.get("/pendapatan-hari-ini", (req, res) => {
   today.setHours(today.getHours() + 7); // Menambahkan 7 jam ke waktu UTC
   const formattedToday = today.toISOString().split("T")[0]; // Format YYYY-MM-DD
 
-  console.log("Pendapatan admin cabang:", adminCabang);
-  console.log("Tanggal pendapatan:", formattedToday);
+  // console.log("Pendapatan admin cabang:", adminCabang);
+  // console.log("Tanggal pendapatan:", formattedToday);
 
   let query = `SELECT SUM(biaya) AS total_pendapatan
                FROM transaksi
