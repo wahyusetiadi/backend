@@ -190,20 +190,22 @@ router.get("/transaksi-hari-ini", (req, res) => {
   console.log("transaksi admin cabang: ", adminCabang);
 
   const userRole = req.user.role;
-  const today = new Date().toISOString().split("T")[0];
+  const today = new Date();
+  today.setHours(today.getHours() + 7);
+  const formattedToday = today.toISOString().split("T")[0];
 
   let query = `SELECT COUNT(id) AS total_transaksi_harian
   FROM transaksi WHERE DATE(tanggal) = ?`;
-  let queryParams = [today];
+  let queryParams = [formattedToday];
 
   if (userRole === "admin_besar") {
     query = `SELECT COUNT(id) AS total_transaksi_harian
     FROM transaksi WHERE DATE(tanggal) = ?`;
-    queryParams = [today];
+    queryParams = [formattedToday];
   } else if (userRole === "admin_cabang") {
     query = `SELECT COUNT(id) AS total_transaksi_harian
     FROM transaksi WHERE DATE(tanggal) = ? AND petugas = ?`;
-    queryParams = [today, userName];
+    queryParams = [formattedToday, userName];
   } else {
     return res.status(403).json({ message: "Akses tidak diizinkan" });
   }
@@ -220,7 +222,7 @@ router.get("/transaksi-hari-ini", (req, res) => {
     }
     res.json({
       totalTransaksiHarian: row.total_transaksi_harian || 0,
-      tanggal: today, // Menambahkan tanggal yang digunakan dalam response
+      tanggal: formattedToday, // Menambahkan tanggal yang digunakan dalam response
     });
   });
 });
@@ -276,29 +278,31 @@ router.get("/pendapatan-hari-ini", (req, res) => {
   const adminCabang = req.user.cabang;
   const userName = req.user.name;
   const userRole = req.user.role;
-  const today = new Date().toISOString().split("T")[0]; // Format YYYY-MM-DD
+
+  // Ambil waktu saat ini dan sesuaikan dengan zona waktu +7 jam (WIB)
+  const today = new Date();
+  today.setHours(today.getHours() + 7); // Menambahkan 7 jam ke waktu UTC
+  const formattedToday = today.toISOString().split("T")[0]; // Format YYYY-MM-DD
 
   console.log("Pendapatan admin cabang:", adminCabang);
-  console.log("Tanggal pendapatan:", today);
+  console.log("Tanggal pendapatan:", formattedToday);
 
   let query = `SELECT SUM(biaya) AS total_pendapatan
                FROM transaksi
                WHERE DATE(tanggal) = ?`;
-  let queryParams = [today];
+  let queryParams = [formattedToday];
 
   // Cek role dan tentukan query
   if (userRole === "admin_besar") {
-    // Admin besar bisa melihat semua pendapatan tanpa batasan petugas
     query = `SELECT SUM(biaya) AS total_pendapatan
              FROM transaksi
              WHERE DATE(tanggal) = ?`;
-    queryParams = [today];
+    queryParams = [formattedToday];
   } else if (userRole === "admin_cabang") {
-    // Admin cabang hanya bisa melihat pendapatan dari petugas yang terkait
     query = `SELECT SUM(biaya) AS total_pendapatan
              FROM transaksi
              WHERE DATE(tanggal) = ? AND petugas = ?`;
-    queryParams = [today, userName];
+    queryParams = [formattedToday, userName];
   } else {
     return res.status(403).json({ message: "Akses ditolak!" });
   }
@@ -310,20 +314,18 @@ router.get("/pendapatan-hari-ini", (req, res) => {
       return res.status(500).json({ error: "Terjadi kesalahan pada server" });
     }
 
-    // Akumulasi total pendapatan
     const totalPendapatan = row.total_pendapatan || 0;
-
-    // Pembagian total pendapatan dengan 3
     const saldoBersih = totalPendapatan / 3;
 
     // Mengirimkan response berupa total pendapatan dan saldo bersih
     res.json({
       totalPendapatan: totalPendapatan, // Pendapatan total yang dihitung
       saldoBersih: saldoBersih, // Saldo bersih setelah dibagi 3
-      tanggal: today, // Menambahkan tanggal yang digunakan dalam response
+      tanggal: formattedToday, // Menggunakan tanggal yang sudah disesuaikan
     });
   });
 });
+
 
 // Endpoint untuk menghapus transaksi berdasarkan ID
 router.delete("/:id", (req, res) => {

@@ -42,25 +42,27 @@ router.get("/pengeluaran-hari-ini", (req,res) => {
   console.log("pengeluaran admin cabang:", adminCabang);
 
   const userRole = req.user.role;
-  const today = new Date().toISOString().split("T")[0];
+  const today = new Date();
+  today.setHours(today.getHours() + 7);
+  const formattedToday = today.toISOString().split("T")[0];
   // console.log("Tanggal yang digunakan untuk query:", today);
   
   let query = `SELECT SUM(biaya) AS total_pengeluaran
   FROM pengeluaran
   WHERE DATE(tanggal) = ?`;
-  let queryParams = [today];
+  let queryParams = [formattedToday];
 
   if(userRole === "admin_besar") {
     query = `SELECT SUM(biaya) AS total_pengeluaran 
     FROM pengeluaran 
     WHERE DATE(tanggal) = ?`;
-    queryParams = [today];
+    queryParams = [formattedToday];
   }
   else if(userRole === "admin_cabang") {
     query = `SELECT SUM(biaya) AS total_pengeluaran
     FROM pengeluaran
     WHERE DATE(tanggal) = ? AND petugas = ?`;
-    queryParams = [today, userName];
+    queryParams = [formattedToday, userName];
   }
   else {
     return res.status(403).json({ message: "Akses tidak diizinkan" });
@@ -77,7 +79,7 @@ router.get("/pengeluaran-hari-ini", (req,res) => {
     }
     res.json({
       totalPengeluaran: row.total_pengeluaran || 0,
-      tanggal: today,
+      tanggal: formattedToday,
     });
   });
 });
