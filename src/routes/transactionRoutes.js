@@ -21,10 +21,10 @@ const upload = multer({ storage: storage });
 //   // const adminCabang = req.user?.cabang;
 //   // console.log("cabang", adminCabang);
 
-//   const { nomorPolisi, jenisKendaraan, biaya, petugas, cabang } = req.body;
+//   const { nomorPolisi, tipe, biaya, petugas, cabang } = req.body;
 
 //   // Periksa apakah semua field ada
-//   if (!nomorPolisi || !jenisKendaraan || !biaya || !petugas ||!cabang) {
+//   if (!nomorPolisi || !tipe || !biaya || !petugas ||!cabang) {
 //     return res.status(400).json({ message: "Semua field harus diisi" });
 //   }
 
@@ -33,11 +33,11 @@ const upload = multer({ storage: storage });
 //   const waktuTransaksi = new Date().toISOString();
 //   // Query untuk menambahkan transaksi baru
 //   const query =
-//     "INSERT INTO transaksi (nomorPolisi, jenisKendaraan, biaya, gambar, petugas, cabang) VALUES (?, ?, ?, ?, ?, ?)";
+//     "INSERT INTO transaksi (nomorPolisi, tipe, biaya, gambar, petugas, cabang) VALUES (?, ?, ?, ?, ?, ?)";
 
 //   db.run(
 //     query,
-//     [nomorPolisi, jenisKendaraan, biaya, gambar, petugas, cabang],
+//     [nomorPolisi, tipe, biaya, gambar, petugas, cabang],
 //     function (err) {
 //       if (err) {
 //         return res
@@ -52,9 +52,9 @@ const upload = multer({ storage: storage });
 //   );
 // });
 router.post("/", upload.single("gambar"), (req, res) => {
-  const { nomorPolisi, jenisKendaraan, biaya, petugas, cabang } = req.body;
+  const { nomorPolisi, jenis, tipe, biaya, petugas, cabang } = req.body;
 
-  if (!nomorPolisi || !jenisKendaraan || !biaya || !petugas || !cabang) {
+  if (!nomorPolisi || !jenis || !tipe || !biaya || !petugas || !cabang) {
     return res.status(400).json({ message: "Semua field harus diisi" });
   }
 
@@ -80,21 +80,19 @@ router.post("/", upload.single("gambar"), (req, res) => {
 
     if (row) {
       // Jika ada data dengan nomor polisi yang sama dan tanggal transaksi yang sama
-      return res
-        .status(400)
-        .json({
-          message:
-            "Transaksi dengan nomor polisi yang sama sudah ada pada hari ini",
-        });
+      return res.status(400).json({
+        message:
+          "Transaksi dengan nomor polisi yang sama sudah ada pada hari ini",
+      });
     }
 
     // Jika tidak ada duplikasi, lanjutkan proses transaksi
     const query =
-      "INSERT INTO transaksi (nomorPolisi, jenisKendaraan, biaya, gambar, petugas, cabang, tanggal, waktu) VALUES (?, ?, ?, ?, ?, ?, DATE('now', '+7 hours'), TIME('now', '+7 hours'))";
+      "INSERT INTO transaksi (nomorPolisi, jenis, tipe, biaya, gambar, petugas, cabang, tanggal, waktu) VALUES (?, ?, ?, ?, ?, ?, ?, DATE('now', '+7 hours'), TIME('now', '+7 hours'))";
 
     db.run(
       query,
-      [nomorPolisi, jenisKendaraan, biaya, gambar, petugas, cabang],
+      [nomorPolisi, jenis, tipe, biaya, gambar, petugas, cabang],
       function (err) {
         if (err) {
           return res
@@ -103,7 +101,8 @@ router.post("/", upload.single("gambar"), (req, res) => {
         }
         console.log(`[LOG] Transaksi ditambahkan:
           Nomor Polisi: ${nomorPolisi},
-          Jenis Kendaraan: ${jenisKendaraan},
+          Jenis: ${jenis},
+          Tipe: ${tipe},
           Biaya: ${biaya},
           Petugas: ${petugas},
           Cabang: ${cabang},
@@ -231,6 +230,94 @@ router.get("/transaksi-hari-ini", (req, res) => {
   });
 });
 
+router.get("/transaksi-by-date", (req, res) => {
+  const adminCabang = req.user.cabang;
+  const useName = req.user.name;
+  const userRole = req.user.role;
+
+  const startDate = req.query.start_date; // e.g., '2025-01-01'
+  const endDate = req.query.end_date; // e.g., '2025-01-06'
+  const tanggal = req.query.tanggal; // e.g., '2025-01-01'
+
+  if (!startDate && !tanggal) {
+    // Jika startDate dan tanggal tidak disediakan, set default 1 bulan terakhir
+    const lastMonthDate = new Date();
+    lastMonthDate.setMonth(lastMonthDate.getMonth() - 1); // Mundur 1 bulan
+    const lastMonthStartDate = new Date(
+      lastMonthDate.getFullYear(),
+      lastMonthDate.getMonth(),
+      1
+    ); // Tanggal 1 bulan lalu
+    const lastMonthEndDate = new Date(
+      lastMonthDate.getFullYear(),
+      lastMonthDate.getMonth() + 1,
+      0
+    ); // Tanggal terakhir bulan lalu
+
+    // Format menjadi 'YYYY-MM-DD'
+    const formattedStartDate = lastMonthStartDate.toISOString().split("T")[0];
+    const formattedEndDate = lastMonthEndDate.toISOString().split("T")[0];
+
+    // Set startDate dan endDate untuk query
+    startDate = formattedStartDate;
+    endDate = formattedEndDate;
+  }
+
+  if (!startDate && !tanggal) {
+    return res
+      .status(400)
+      .json({ message: "Tanggal atau rentang tanggal harus disediakan" });
+  }
+
+  let query = `
+  SELECT 
+    COUNT(id) AS total_transaksi_harian,
+    SUM(CASE WHEN jenis = 'Mobil' THEN 1 ELSE 0 END) AS total_mobil,
+    SUM(CASE WHEN jenis = 'Motor' THEN 1 ELSE 0 END) AS total_motor,
+    SUM(biaya) AS total_pendapatan
+  FROM transaksi`;
+
+  let queryParams = [];
+
+  // Case 1: If only a single date is provided (tanggal)
+  if (tanggal) {
+    query += ` WHERE DATE(tanggal) = ?`;
+    queryParams = [tanggal];
+  }
+  // Case 2: If a date range is provided (start_date and end_date)
+  else if (startDate && endDate) {
+    query += ` WHERE DATE(tanggal) BETWEEN ? AND ?`;
+    queryParams = [startDate, endDate];
+  }
+
+  // Handle user role filtering
+  if (userRole === "admin_besar") {
+    // Admin besar can see all data within the date range or specific date
+  } else if (userRole === "admin_cabang") {
+    query += ` AND petugas = ?`;
+    queryParams.push(useName);
+  } else {
+    return res.status(403).json({ message: "Akses tidak diizinkan" });
+  }
+
+  db.get(query, queryParams, (err, row) => {
+    if (err) {
+      console.error("Gagal GET total transaksi berdasarkan tanggal:", err);
+      return res.status(500).json({ error: "Terjadi Kesalahan pada server" });
+    }
+
+    res.json({
+      totalTransaksiHarian: row.total_transaksi_harian || 0,
+      totalMobil: row.total_mobil || 0,
+      totalMotor: row.total_motor || 0,
+      totalPendapatan: row.total_pendapatan ||0,
+      startDate: startDate,
+      endDate: endDate,
+      tanggal: tanggal,
+    });
+  });
+});
+
 // Endpoint untuk mendapatkan total pendapatan hari ini
 // router.get("/pendapatan-hari-ini", (req, res) => {
 //   const adminCabang = req.user.cabang;
@@ -330,7 +417,6 @@ router.get("/pendapatan-hari-ini", (req, res) => {
   });
 });
 
-
 // Endpoint untuk menghapus transaksi berdasarkan ID
 router.delete("/:id", (req, res) => {
   const { id } = req.params; // Mendapatkan ID dari parameter URL
@@ -359,10 +445,10 @@ router.put("/:id", authenticate, (req, res) => {
   const adminCabang = req.user.cabang;
   const userRole = req.user.role;
   const transactionId = req.params.id; // ID transaksi yang akan diupdate
-  const { nomorPolisi, jenisKendaraan, biaya, cabang } = req.body; // Data yang ingin diupdate
+  const { nomorPolisi, tipe, biaya, cabang, tanggal } = req.body; // Data yang ingin diupdate
 
   // Memastikan data yang diperlukan ada
-  if (!nomorPolisi || !jenisKendaraan || !biaya || !cabang) {
+  if (!nomorPolisi || !tipe || !biaya || !cabang) {
     return res
       .status(400)
       .json({ message: "Data yang diperlukan tidak lengkap" });
@@ -370,8 +456,8 @@ router.put("/:id", authenticate, (req, res) => {
 
   // Validasi hak akses berdasarkan peran
   let query =
-    "UPDATE transaksi SET nomorPolisi = ?, jenisKendaraan = ?, biaya = ?, cabang = ? WHERE id = ?";
-  let queryParams = [nomorPolisi, jenisKendaraan, biaya, cabang, transactionId];
+    "UPDATE transaksi SET nomorPolisi = ?, tipe = ?, biaya = ?, cabang = ?, tanggal = ? WHERE id = ?";
+  let queryParams = [nomorPolisi, tipe, biaya, cabang, tanggal, transactionId];
 
   if (userRole === "admin_besar") {
     // Admin besar dapat mengubah transaksi apa pun
@@ -391,11 +477,9 @@ router.put("/:id", authenticate, (req, res) => {
         .json({ message: "Gagal memperbarui transaksi", error: err });
     }
     if (this.changes === 0) {
-      return res
-        .status(404)
-        .json({
-          message: "Transaksi tidak ditemukan atau tidak ada perubahan",
-        });
+      return res.status(404).json({
+        message: "Transaksi tidak ditemukan atau tidak ada perubahan",
+      });
     }
     res.status(200).json({ message: "Transaksi berhasil diperbarui" });
   });
