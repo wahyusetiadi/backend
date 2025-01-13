@@ -160,32 +160,37 @@ router.get("/gambar/:filename", (req, res) => {
 router.get("/", authenticate, (req, res) => {
   const adminCabang = req.user.cabang;
   const userRole = req.user.role;
-  const userName = req.user.name; // Get the user's name
+  const userName = req.user.name;
 
-  let query = "SELECT * FROM transaksi";
+  const { petugas, tanggalAwal, tanggalAkhir } = req.query; // Ambil filter dari query params
+
+  let query = "SELECT * FROM transaksi WHERE 1=1";
   let queryParams = [];
 
   if (userRole === "admin_besar") {
-    // Admin besar can view all transactions
-    query = "SELECT * FROM transaksi";
-    queryParams = [];
+    if (petugas) {
+      query += " AND petugas = ?";
+      queryParams.push(petugas);
+    }
+    if (tanggalAwal && tanggalAkhir) {
+      query += " AND tanggal BETWEEN ? AND ?";
+      queryParams.push(tanggalAwal, tanggalAkhir);
+    }
   } else if (userRole === "admin_cabang") {
-    // Admin cabang can only view transactions made by their own name (petugas)
-    query = "SELECT * FROM transaksi WHERE petugas = ?";
-    queryParams = [userName];
+    query += " AND petugas = ?";
+    queryParams.push(userName);
   } else {
     return res.status(403).json({ message: "Access not allowed" });
   }
 
   db.all(query, queryParams, (err, rows) => {
     if (err) {
-      return res
-        .status(500)
-        .json({ message: "Failed to fetch transactions", error: err });
+      return res.status(500).json({ message: "Failed to fetch transactions", error: err });
     }
     res.status(200).json(rows);
   });
 });
+
 
 router.get("/transaksi-hari-ini", (req, res) => {
   const adminCabang = req.user.cabang;
