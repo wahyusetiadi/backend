@@ -191,6 +191,44 @@ router.get("/", authenticate, (req, res) => {
   });
 });
 
+// Misalnya di backend, buat endpoint khusus untuk leaderboard
+router.get("/leaderboard", authenticate, (req, res) => {
+  const userRole = req.user.role;
+
+  // Jika role adalah admin_besar atau admin_cabang, kita masih bisa fetch transaksi semua petugas
+  if (userRole !== "admin_besar" && userRole !== "admin_cabang") {
+    return res.status(403).json({ message: "Access not allowed" });
+  }
+
+  // Ambil data transaksi semua petugas
+  db.all("SELECT * FROM transaksi", [], (err, rows) => {
+    if (err) {
+      return res.status(500).json({ message: "Failed to fetch transactions", error: err });
+    }
+
+    // Proses transaksi untuk leaderboard
+    const pointsMap = {};
+
+    rows.forEach((transaction) => {
+      const { petugas, jenis } = transaction;
+      const points = jenis === "Motor" ? 1 : jenis === "Mobil" ? 2 : 0;
+      pointsMap[petugas] = (pointsMap[petugas] || 0) + points;
+    });
+
+    // Urutkan berdasarkan poin terbanyak
+    const leaderboardData = Object.keys(pointsMap)
+      .map((petugasId) => ({
+        petugasId,
+        totalPoin: pointsMap[petugasId],
+      }))
+      .sort((a, b) => b.totalPoin - a.totalPoin);
+
+    res.status(200).json(leaderboardData);
+  });
+});
+
+
+
 
 router.get("/transaksi-hari-ini", (req, res) => {
   const adminCabang = req.user.cabang;
