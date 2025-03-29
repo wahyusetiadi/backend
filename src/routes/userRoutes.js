@@ -2,6 +2,8 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const fs = require('fs');
+const path = require('path');
 const db = require('../db');
 const authenticate = require('../middlewares/authMiddleware');
 const router = express.Router();
@@ -13,7 +15,7 @@ router.post('/register', (req, res) => {
   
   const query = 'INSERT INTO users (name, email, password, role, cabang) VALUES (?, ?, ?, ?, ?)';
   db.get(`
-    SELECT * FROM users WHERE name = ? OR email = ?
+    SELECT id, name, email, role, cabang FROM users WHERE name = ? OR email = ?
     `, [name, email], (err, row) => {
       if (err) {
         return res.status(500).json({ message: "Terjadi kesalahan pada server."});
@@ -34,8 +36,8 @@ router.post('/register', (req, res) => {
 // Login User (Admin cabang atau admin besar)
 router.post('/login', (req, res) => {
   const { name, password } = req.body;
-  
-  const query = 'SELECT * FROM users WHERE name = ?';
+
+  const query = 'SELECT name, password, role, cabang FROM users WHERE name = ?';
   db.get(query, [name], (err, user) => {
     if (err || !user) {
       return res.status(404).json({ message: 'User tidak ditemukan' });
@@ -46,9 +48,28 @@ router.post('/login', (req, res) => {
       return res.status(400).json({ message: 'Username atau password salah!' });
     }
 
+    const now = new Date();
+    const formattedDate = now.toLocaleString('en-GB', {
+      year: 'numeric',
+      month: 'short',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    }).replace(',', '');
+
     // Generate token JWT
     const token = jwt.sign({ id: user.id, name: user.name, role: user.role, cabang: user.cabang }, 'jwt_token_secret', { expiresIn: '12h' });
-    
+
+    // Log activity ke file
+    const logMessage = `${formattedDate}\nUser [${name}] dari cabang [${user.cabang}] berhasil login\n`;
+    fs.appendFile(path.join(__dirname, '..', '..', 'data', 'login_logs.txt'), logMessage, (err) => {
+      if (err) {
+        console.error('Failed to write log:', err);
+      }
+    });
+    console.log(logMessage);
+
     // Respons sukses dengan status 200
     res.status(200).json({
       message: 'Login Berhasil',
@@ -57,8 +78,9 @@ router.post('/login', (req, res) => {
   });
 });
 
+
 router.get('/', (req, res) => {
-  const query = `SELECT * FROM users`;
+  const query = `SELECT id, name, role, cabang, dibuatTanggal, dibuatJam FROM users`;
 
   db.all(query, (err, rows) => {
     if(err) {
@@ -127,7 +149,74 @@ router.put('/:id', (req, res) => {
 
 //endpoint untuk GET user
 router.get('/data', authenticate, (req, res) => {
-  res.json(req.user);
+  const { name, role, cabang } = req.user; // Ambil hanya kolom name, role, cabang
+  res.json({ name, role, cabang }); // Kirimkan sebagai response
+});
+
+// Endpoint logout
+router.post('/logout', (req, res) => {
+  const token = req.headers.authorization?.split(' ')[1]; // Ambil token dari header Authorization
+
+  if (!token) {
+    return res.status(400).json({ message: 'Token tidak ditemukan' });
+  }
+
+  // Verifikasi token
+  jwt.verify(token, 'jwt_token_secret', (err, decoded) => {
+    if (err) {
+      return res.status(403).json({ message: 'Token tidak valid' });
+    }
+
+    const now = new Date();
+    const formattedDate = now.toLocaleString('en-GB', {
+      year: 'numeric',
+      month: 'short',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    }).replace(',', '');
+
+    // Log aktivitas logout ke file
+    const username = decoded.name;
+    const logMessage = `${formattedDate}\nUser [${username}] berhasil logout\n`;
+
+    fs.appendFile(path.join(__dirname, '..', '..', 'data', 'logout_logs.txt'), logMessage, (err) => {
+      if (err) {
+        console.error('Gagal menulis log:', err);
+      }
+    });
+    console.log(logMessage);
+
+    res.status(200).json({ message: 'Logout berhasil' });
+  });
+});
+
+// Endpoint untuk mengambil logout logs
+router.get('/logout-logs', (req, res) => {
+  const logFilePath = path.join(__dirname, '..', '..', 'data', 'logout_logs.txt');
+
+  fs.readFile(logFilePath, 'utf8', (err, data) => {
+    if (err) {
+      return res.status(500).json({ message: 'Gagal membaca file log' });
+    }
+
+    // Kirimkan isi file log ke frontend
+    res.status(200).json({ logs: data.split('\n').filter(line => line !== '') });
+  });
+});
+
+router.get('/login-logs', (req, res) => {
+  const logFilePath = path.join(__dirname, '..', '..', 'data', 'login_logs.txt');
+
+  fs.readFile(logFilePath, 'utf8', (err, data) => {
+    if (err) {
+      return res.status(500).json({ message: 'Gagal membaca file log' });
+    }
+
+    // Kirimkan isi file log ke frontend
+    res.status(200).json({ logs: data.split('\n').filter(line => line !== '') });
+  });
 });
 
 module.exports = router;

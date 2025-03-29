@@ -66,7 +66,7 @@ router.post("/", upload.single("gambar"), (req, res) => {
 
   // Query untuk mengecek apakah ada transaksi dengan nomor polisi yang sama dan tanggal yang sama
   const checkQuery = `
-    SELECT * FROM transaksi 
+    SELECT nomorPolisi, tanggal FROM transaksi 
     WHERE nomorPolisi = ? AND tanggal = DATE('now', '+7 hours')
   `;
 
@@ -201,7 +201,7 @@ router.get("/leaderboard", authenticate, (req, res) => {
   }
 
   // Ambil data transaksi semua petugas
-  db.all("SELECT * FROM transaksi", [], (err, rows) => {
+  db.all("SELECT petugas, jenis FROM transaksi", [], (err, rows) => {
     if (err) {
       return res.status(500).json({ message: "Failed to fetch transactions", error: err });
     }
@@ -226,8 +226,6 @@ router.get("/leaderboard", authenticate, (req, res) => {
     res.status(200).json(leaderboardData);
   });
 });
-
-
 
 
 router.get("/transaksi-hari-ini", (req, res) => {
