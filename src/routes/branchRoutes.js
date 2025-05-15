@@ -7,38 +7,26 @@ const authorize = require("../middlewares/authorizedMiddleware");
 
 const router = express.Router();
 
-router.get("/", authenticate, authorize(["admin_besar"]), (req, res) => {
-  res.json({ message: "Hallo Admin " });
+router.get("/", (req, res) => {
+  const query = `SELECT id, branch FROM branches`;
+  db.all(query, [], (err, rows) => {
+    if (err) {
+      return res.status(500).json({ message: `Internal Server Error` });
+    }
+    res.json(rows);
+  });
 });
 
-router.post(
-  "/register",
-  authenticate,
-  authorize(["admin_besar"]),
-  (req, res) => {
-    const { name, email, password, role, cabang } = req.body;
-    const hashedPassword = bcrypt.hashSync(password, 8);
-
-    const query =
-      "INSERT INTO users (name, email, password, role, cabang) VALUE (? ?, ?, ?, ?)";
-    db.get(`
-      SELECT * FROM users WHERE name = ? OR email = ?
-    `, [name, email], (err, row) => {
-      if(err) {
-        return res.status(500).json({ message: "Terjasi kesalahan pada server." });
-      }
-      if(row) {
-        return res.status(400).json({ message: "User sudah terdaftar! "});
-      }
-      db.run(query, [name, email, hashedPassword, role, cabang], function(err) {
-        if(err) {
-          return res.status(500).json({ message: "Gagal mendaftarkan user!", error: err });
-        }
-        res.status(201).json({ message: "Registrasi user berhasil", id: this.lastID });
-      });
-    });
-  }
-);
+router.post("/create", (req, res) => {
+  const { branch } = req.body;
+  const query = "INSERT INTO branches (branch) VALUES (?)";
+  db.run(query, [branch], (err, rows) => {
+    if(err) {
+      return res.status(500).json({ message: `Internal Server Error`})
+    }
+    res.status(201).json({ message: `Success Create Branch`, rows})
+  })
+});
 
 // router.get("/", authenticate, authorize(["admin_besar"]), (req, res) => {
 //   const query = "SELECT * FROM branches";

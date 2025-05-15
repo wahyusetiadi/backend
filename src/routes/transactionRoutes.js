@@ -164,7 +164,7 @@ router.get("/", authenticate, (req, res) => {
 
   const { petugas, tanggalAwal, tanggalAkhir } = req.query; // Ambil filter dari query params
 
-  let query = "SELECT * FROM transaksi WHERE 1=1";
+  let query = "SELECT * FROM transaksi WHERE 1=1 AND isDeleted = 0";
   let queryParams = [];
 
   if (userRole === "admin_besar") {
@@ -185,7 +185,20 @@ router.get("/", authenticate, (req, res) => {
 
   db.all(query, queryParams, (err, rows) => {
     if (err) {
-      return res.status(500).json({ message: "Failed to fetch transactions", error: err });
+      return res
+        .status(500)
+        .json({ message: "Failed to fetch transactions", error: err });
+    }
+    res.status(200).json(rows);
+  });
+});
+
+router.get("/all", (req, res) => {
+  const query = `SELECT * FROM transaksi`;
+
+  db.all(query, (err, rows) => {
+    if (err) {
+      return res.status(500).json({ message: `Internal Server Error` });
     }
     res.status(200).json(rows);
   });
@@ -203,7 +216,9 @@ router.get("/leaderboard", authenticate, (req, res) => {
   // Ambil data transaksi semua petugas
   db.all("SELECT petugas, jenis FROM transaksi", [], (err, rows) => {
     if (err) {
-      return res.status(500).json({ message: "Failed to fetch transactions", error: err });
+      return res
+        .status(500)
+        .json({ message: "Failed to fetch transactions", error: err });
     }
 
     // Proses transaksi untuk leaderboard
@@ -227,7 +242,6 @@ router.get("/leaderboard", authenticate, (req, res) => {
   });
 });
 
-
 router.get("/transaksi-hari-ini", (req, res) => {
   const adminCabang = req.user.cabang;
   const userName = req.user.name;
@@ -239,16 +253,16 @@ router.get("/transaksi-hari-ini", (req, res) => {
   const formattedToday = today.toISOString().split("T")[0];
 
   let query = `SELECT COUNT(id) AS total_transaksi_harian
-  FROM transaksi WHERE DATE(tanggal) = ?`;
+  FROM transaksi WHERE DATE(tanggal) = ? AND isDeleted = 0`;
   let queryParams = [formattedToday];
 
   if (userRole === "admin_besar") {
     query = `SELECT COUNT(id) AS total_transaksi_harian
-    FROM transaksi WHERE DATE(tanggal) = ?`;
+    FROM transaksi WHERE DATE(tanggal) = ? AND isDeleted = 0`;
     queryParams = [formattedToday];
   } else if (userRole === "admin_cabang") {
     query = `SELECT COUNT(id) AS total_transaksi_harian
-    FROM transaksi WHERE DATE(tanggal) = ? AND petugas = ?`;
+    FROM transaksi WHERE DATE(tanggal) = ? AND petugas = ? AND isDeleted = 0`;
     queryParams = [formattedToday, userName];
   } else {
     return res.status(403).json({ message: "Akses tidak diizinkan" });
@@ -322,12 +336,12 @@ router.get("/transaksi-by-date", (req, res) => {
 
   // Case 1: If only a single date is provided (tanggal)
   if (tanggal) {
-    query += ` WHERE DATE(tanggal) = ?`;
+    query += ` WHERE DATE(tanggal) = ? AND isDeleted = 0`;
     queryParams = [tanggal];
   }
   // Case 2: If a date range is provided (start_date and end_date)
   else if (startDate && endDate) {
-    query += ` WHERE DATE(tanggal) BETWEEN ? AND ?`;
+    query += ` WHERE DATE(tanggal) BETWEEN ? AND ? AND isDeleted = 0`;
     queryParams = [startDate, endDate];
   }
 
@@ -351,7 +365,7 @@ router.get("/transaksi-by-date", (req, res) => {
       totalTransaksiHarian: row.total_transaksi_harian || 0,
       totalMobil: row.total_mobil || 0,
       totalMotor: row.total_motor || 0,
-      totalPendapatan: row.total_pendapatan ||0,
+      totalPendapatan: row.total_pendapatan || 0,
       startDate: startDate,
       endDate: endDate,
       tanggal: tanggal,
@@ -421,19 +435,19 @@ router.get("/pendapatan-hari-ini", (req, res) => {
 
   let query = `SELECT SUM(biaya) AS total_pendapatan
                FROM transaksi
-               WHERE DATE(tanggal) = ?`;
+               WHERE DATE(tanggal) = ? AND isDeleted = 0`;
   let queryParams = [formattedToday];
 
   // Cek role dan tentukan query
   if (userRole === "admin_besar") {
     query = `SELECT SUM(biaya) AS total_pendapatan
              FROM transaksi
-             WHERE DATE(tanggal) = ?`;
+             WHERE DATE(tanggal) = ? AND isDeleted = 0`;
     queryParams = [formattedToday];
   } else if (userRole === "admin_cabang") {
     query = `SELECT SUM(biaya) AS total_pendapatan
              FROM transaksi
-             WHERE DATE(tanggal) = ? AND petugas = ?`;
+             WHERE DATE(tanggal) = ? AND petugas = ? AND isDeleted = 0`;
     queryParams = [formattedToday, userName];
   } else {
     return res.status(403).json({ message: "Akses ditolak!" });
@@ -459,11 +473,11 @@ router.get("/pendapatan-hari-ini", (req, res) => {
 });
 
 // Endpoint untuk menghapus transaksi berdasarkan ID
-router.delete("/:id", (req, res) => {
+router.delete("/delete/:id", (req, res) => {
   const { id } = req.params; // Mendapatkan ID dari parameter URL
 
   // Query untuk menghapus transaksi berdasarkan ID
-  const query = "DELETE FROM transaksi WHERE id = ?";
+  const query = "UPDATE transaksi SET isDeleted = 1 WHERE id = ?";
 
   db.run(query, [id], function (err) {
     if (err) {
@@ -482,14 +496,33 @@ router.delete("/:id", (req, res) => {
   });
 });
 
-router.put("/:id", authenticate, (req, res) => {
+router.put("/recovery/:id", (req, res) => {
+  const { id } = req.params;
+
+  const query = `UPDATE transaksi SET isDeleted = 0 WHERE id = ?`;
+  db.run(query, [id], function (err) {
+    if (err) {
+      return res.status(500).json({ message: `Internal Server Error` });
+    }
+    if (this.changes === 0) {
+      return res.status(404).json({ message: `Data not found!` });
+    }
+
+    res
+      .status(200)
+      .json({ message: `Data transaksi dengan ID: ${id} berhasil dipulihkan` });
+  });
+});
+
+router.put("/update/:id", authenticate, (req, res) => {
   const adminCabang = req.user.cabang;
   const userRole = req.user.role;
   const transactionId = req.params.id; // ID transaksi yang akan diupdate
-  const { nomorPolisi, tipe, biaya, cabang, tanggal } = req.body; // Data yang ingin diupdate
+  const { nomorPolisi, jenis, tipe, biaya, petugas, cabang, tanggal } =
+    req.body; // Data yang ingin diupdate
 
   // Memastikan data yang diperlukan ada
-  if (!nomorPolisi || !tipe || !biaya || !cabang) {
+  if (!nomorPolisi || !jenis || !tipe || !biaya || !petugas || !cabang) {
     return res
       .status(400)
       .json({ message: "Data yang diperlukan tidak lengkap" });
@@ -497,8 +530,17 @@ router.put("/:id", authenticate, (req, res) => {
 
   // Validasi hak akses berdasarkan peran
   let query =
-    "UPDATE transaksi SET nomorPolisi = ?, tipe = ?, biaya = ?, cabang = ?, tanggal = ? WHERE id = ?";
-  let queryParams = [nomorPolisi, tipe, biaya, cabang, tanggal, transactionId];
+    "UPDATE transaksi SET nomorPolisi = ?,jenis = ?, tipe = ?, biaya = ?, petugas = ?, cabang = ?, tanggal = ? WHERE id = ?";
+  let queryParams = [
+    nomorPolisi,
+    jenis,
+    tipe,
+    biaya,
+    petugas,
+    cabang,
+    tanggal,
+    transactionId,
+  ];
 
   if (userRole === "admin_besar") {
     // Admin besar dapat mengubah transaksi apa pun
@@ -523,6 +565,284 @@ router.put("/:id", authenticate, (req, res) => {
       });
     }
     res.status(200).json({ message: "Transaksi berhasil diperbarui" });
+  });
+});
+
+router.put("/confirm", (req, res) => {
+  const { id } = req.body;
+  console.log("Route /confirm dipanggil");
+
+  // Validasi sederhana
+  if (!id || typeof id !== "number") {
+    return res.status(400).json({ message: "ID tidak valid atau tidak disertakan." });
+  }
+
+  console.log(`Mencoba konfirmasi transaksi dengan ID: ${id}`);
+
+  const query = `UPDATE transaksi SET confirm = 1 WHERE id = ?`;
+
+  db.run(query, [id], function (err) {
+    if (err) {
+      console.error("Gagal memperbarui data transaksi:", err.message);
+      return res.status(500).json({ message: "Terjadi kesalahan pada server." });
+    }
+
+    if (this.changes === 0) {
+      console.warn(`Tidak ada data ditemukan dengan ID: ${id}`);
+      return res.status(404).json({ message: "Data transaksi tidak ditemukan." });
+    }
+
+    console.log(`Transaksi dengan ID ${id} berhasil dikonfirmasi.`);
+    res.status(200).json({ message: "Data transaksi berhasil dikonfirmasi." });
+  });
+});
+
+router.get("/data/:id", (req, res) => {
+  const { id } = req.params;
+  const query = `SELECT * FROM transaksi WHERE id = ?`;
+  db.all(query, [id], (err, rows) => {
+    if (err) {
+      return res
+        .status(500)
+        .json({ message: "Gagal Get Transaksi by ID", error: err });
+    }
+    res.status(200).json(rows);
+  });
+});
+
+//ADDED
+
+router.get("/get-by-tanggal", (req, res) => {
+  const date = req.query.date;
+  let query = "SELECT * FROM transaksi";
+  const params = [];
+
+  if (date) {
+    query += " WHERE tanggal = ?";
+    params.push(date);
+  }
+
+  db.all(query, params, (err, rows) => {
+    if (err) {
+      return res
+        .status(500)
+        .json({ message: "Internal Server Error", error: err });
+    }
+    if (rows.length === 0) {
+      return res
+        .status(404)
+        .send("Tidak ada data yang ditemukan untuk tanggal yang diminta!");
+    }
+
+    res.status(200).json(rows);
+  });
+});
+
+router.get("/get-by-bulan", (req, res) => {
+  const bulan = req.query.bulan; // Format: '2024-05'
+  let query = "SELECT * FROM transaksi";
+  const params = [];
+
+  if (bulan) {
+    query += " WHERE strftime('%Y-%m', tanggal) = ?";
+    params.push(bulan);
+  }
+
+  db.all(query, params, (err, rows) => {
+    if (err) {
+      return res
+        .status(500)
+        .json({ message: "Internal Server Error", error: err });
+    }
+    if (rows.length === 0) {
+      return res
+        .status(404)
+        .send("Tidak ada data yang ditemukan untuk bulan yang diminta!");
+    }
+
+    res.status(200).json(rows);
+  });
+});
+
+router.post("/create", (req, res) => {
+  const { nomorPolisi, jenis, tipe, biaya, petugas, cabang, fee } = req.body;
+
+  // Validasi input
+  if (
+    !nomorPolisi ||
+    !jenis ||
+    !tipe ||
+    !biaya ||
+    !petugas ||
+    !cabang ||
+    !fee
+  ) {
+    return res.status(400).json({ message: "Semua field harus diisi" });
+  }
+
+  // Validasi biaya numerik
+  const biayaNumber = parseFloat(biaya);
+  if (isNaN(biayaNumber)) {
+    return res.status(400).json({ message: "Biaya harus berupa angka" });
+  }
+
+  // File gambar (jika ada)
+  const gambar = req.file ? `/uploads/${req.file.filename}` : null;
+
+  // Waktu transaksi lokal (UTC+7)
+  const waktu = new Date(new Date().getTime() + 7 * 60 * 60 * 1000);
+  const tanggal = waktu.toISOString().split("T")[0]; // YYYY-MM-DD
+  const jam = waktu.toISOString().split("T")[1].split(".")[0]; // HH:MM:SS
+
+  const query =
+    "INSERT INTO transaksi (nomorPolisi, jenis, tipe, biaya, petugas, cabang, fee, tanggal, waktu) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+
+  db.run(
+    query,
+    [nomorPolisi, jenis, tipe, biayaNumber, petugas, cabang, fee, tanggal, jam],
+    function (err) {
+      if (err) {
+        return res
+          .status(500)
+          .json({ message: "Gagal menambahkan transaksi", error: err.message });
+      }
+
+      console.log(`[LOG] Transaksi ditambahkan:
+        Nomor Polisi: ${nomorPolisi}
+        Jenis: ${jenis}
+        Tipe: ${tipe}
+        Biaya: ${biayaNumber}
+        Gambar: ${gambar}
+        Petugas: ${petugas}
+        Cabang: ${cabang}
+        Fee: ${fee}
+        Tanggal: ${tanggal}
+        Waktu: ${jam}`);
+
+      res
+        .status(201)
+        .json({ message: "Transaksi berhasil ditambahkan", id: this.lastID });
+    }
+  );
+});
+
+
+
+router.post("/other", upload.single("gambar"), (req, res) => {
+  const { jenis, item, harga, amount, cabang } = req.body;
+
+  const hargaNumber = parseFloat(harga);
+  if (isNaN(hargaNumber)) {
+    return res.status(400).json({ message: "Harga Harus berupa angka" });
+  }
+
+  const gambar = req.file ? `/uploads/other/${req.file.filename}` : null;
+
+  const waktu = new Date(new Date().getTime() + 7 * 60 * 60 * 1000);
+  const tanggal = waktu.toISOString().split("T")[0];
+  const jam = waktu.toISOString().split("T")[1].split(".")[0];
+
+  const query =
+    "INSERT INTO transaksi_lain (jenis, item, harga, amount, gambar, cabang, tanggal, waktu) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+
+  db.run(
+    query,
+    [jenis, item, hargaNumber, amount, gambar, cabang, tanggal, waktu],
+    function (err) {
+      if (err) {
+        return res.status(500).json({
+          message: "Gagal menambahkan transaksi lainnya",
+          error: err.message,
+        });
+      }
+
+      console.log(`[LOG] Transaksi Lainnya ditambahkan :
+        Jenis: ${jenis}
+        item: ${item}
+        harga: ${hargaNumber}
+        amount: ${amount}
+        gambar: ${gambar}
+        cabang: ${cabang}
+        tanggal: ${tanggal}
+        Jam:: ${jam}`);
+
+      res
+        .status(201)
+        .json({ message: "Transaksi berhasil ditambahkan", id: this.lastID });
+    }
+  );
+});
+
+router.get("/other", (req, res) => {
+  const query = `SELECT * FROM transaksi_lain WHERE 1=1 AND isDeleted = 0`;
+
+  db.all(query, (err, rows) => {
+    if (err) {
+      return res.status(500).json({ message: "Internal Server Error" });
+    }
+
+    res.status(200).json(rows);
+  });
+});
+
+router.delete("/other/delete/:id", (req, res) => {
+  const { id } = req.params;
+
+  const query = "UPDATE transaksi_lain SET isDeleted = 1 WHERE id = ?";
+
+  db.run(query, [id], function (err) {
+    if (err) {
+      return res.status(500).json({ message: "Internal Server Error" });
+    }
+
+    if (this.changes === 0) {
+      return res.status(400).json({ message: "Transaksi tidak ditemukan" });
+    }
+
+    res.status(200).json({ message: "Berhasil Menghapus Transaksi lainnya" });
+  });
+});
+
+router.delete("/other/delete-perm/:id", (req, res) => {
+  const { id } = req.params;
+
+  const query = "DELETE FROM transaksi_lain WHERE id = ?";
+
+  db.run(query, [id], function (err) {
+    if (err) {
+      return res
+        .status(500)
+        .json({ message: "Internal Server Error", error: err.message });
+    }
+
+    if (this.changes === 0) {
+      return res.status(404).json({ message: "Data Tidak Ditemukan!" });
+    }
+
+    res.status(200).json({ message: "Berhasil Menghapus transaksi lainnya" });
+  });
+});
+
+router.delete("/delete-perm/:id", (req, res) => {
+  const { id } = req.params; // Mendapatkan ID dari parameter URL
+
+  // Query untuk menghapus transaksi berdasarkan ID
+  const query = "DELETE FROM transaksi WHERE id = ?";
+
+  db.run(query, [id], function (err) {
+    if (err) {
+      return res
+        .status(500)
+        .json({ message: "Gagal menghapus transaksi", error: err });
+    }
+
+    if (this.changes === 0) {
+      // Jika tidak ada transaksi yang dihapus (ID tidak ditemukan)
+      return res.status(404).json({ message: "Transaksi tidak ditemukan" });
+    }
+
+    // Jika berhasil menghapus transaksi
+    res.status(200).json({ message: "Berhasil menghapus transaksi" });
   });
 });
 
