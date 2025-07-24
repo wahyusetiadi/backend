@@ -32,7 +32,8 @@ db.serialize(() => {
 
   db.run(`
     CREATE TABLE IF NOT EXISTS branches (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+    
+    
       branch TEXT NOT NULL,
       isDeleted INTEGER DEFAULT 0,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP

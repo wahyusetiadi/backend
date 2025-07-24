@@ -21,12 +21,12 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage });
 
-router.post("/batch", upload.array("foto", 10), (req, res) => {
-  console.log("======= Incoming Request =======");
-  console.log("Body:", req.body);         // data non-file
-  console.log("Files:", req.files);       // data file (upload.array)
-  console.log("Field Names in Files:", req.files.map(f => f.fieldname));
-  console.log("================================");
+router.post("/batch", upload.array("foto", 50), (req, res) => {
+  // console.log("======= Incoming Request =======");
+  // console.log("Body:", req.body);         // data non-file
+  // console.log("Files:", req.files);       // data file (upload.array)
+  // console.log("Field Names in Files:", req.files.map(f => f.fieldname));
+  // console.log("================================");
   const { tanggal, cabang } = req.body;
   const files = req.files;
 

@@ -118,6 +118,18 @@ router.get("/", (req, res) => {
   });
 });
 
+router.get("/all", (req, res) => {
+  const query = `SELECT id, name, email, role, cabang, dibuat_tanggal, dibuat_jam, isDeleted FROM users WHERE isDeleted = 1`;
+
+  db.all(query, (err, rows) => {
+    if (err) {
+      return res.status(500).json({ message: "Gagal GET users", error: err });
+    }
+    res.status(200).json(rows);
+  });
+});
+
+
 router.delete("/:id", (req, res) => {
   const { id } = req.params;
   const query = `UPDATE users SET isDeleted = 1 WHERE id = ?`;
