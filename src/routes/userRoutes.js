@@ -9,7 +9,7 @@ const authenticate = require("../middlewares/authMiddleware");
 const { json } = require("body-parser");
 const router = express.Router();
 
-const JWT_SECRET = process.env.JWT_SECRET;
+const JWT_SECRET = process.env.JWT_SECRET || 'wsdmc7';
 
 // Register User (Admin cabang dan admin besar)
 router.post("/register", (req, res) => {

@@ -102,6 +102,14 @@ db.serialize(() => {
     createdAt TIME DEFAULT (TIME('now', '+7 hours'))
   )`);
 
+  db.run(`CREATE TABLE IF NOT EXISTS items (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    stock INTEGER DEFAULT 0,
+    price INTEGER,
+    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )`);
+
   // db.run(`
   //   CREATE TABLE IF NOT EXISTS transactions (
   //     id INTEGER PRIMARY KEY AUTOINCREMENT,
